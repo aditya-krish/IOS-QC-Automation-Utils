@@ -60,7 +60,7 @@ class MyMesh:
             try:
                 plt.imsave(kwargs['destination'],image)
             except KeyError:
-                raise ValueError('Destination has not been mentioned')
+                raise RuntimeError('Destination has not been mentioned')
         vpl.show(block=False) 
         vpl.close()
     
@@ -111,8 +111,7 @@ class MyMesh:
         
         # rotate mesh back
         _mesh.rotate([0,1,0],math.radians(-120))       
-        _mesh.rotate([0,0,1],math.radians(120))              
-        
+        _mesh.rotate([0,0,1],math.radians(120))      
     
     
 def save_images_from_directory_path(path: str)-> None:
