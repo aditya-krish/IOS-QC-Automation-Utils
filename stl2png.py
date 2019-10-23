@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct 15 17:04:27 2019
+Created on Fri Oct 11 20:25:26 2019
 
 @author: Aditya
-A better stl2png
+Convert .stl files in a directory to 3-view png
 """
 
+#import numpy as np
 from stl import mesh
 import matplotlib.pyplot as plt
 import math
-import vtkplotlib as vpl
+from mpl_toolkits import mplot3d
+from matplotlib import cm
+
+#### set dark background for computational efficiency ####
+plt.style.use('dark_background')
 
 class MyDirectory:
     import os
@@ -47,80 +52,67 @@ class MyMesh:
     def get_mesh(self: "MyMesh") -> mesh.Mesh:
         return self.mesh
     
-    @staticmethod
-    def _make_current_view(mesh_vectors, **kwargs) -> None:
+    def save_3_view(self: "MyMesh",color_scheme=cm.GnBu):
         '''
-        Make current view of the mesh. 
-        :params mesh_vectors: np.ndarray object containing the vectors of the mesh
-        :params 
-        '''
-        vpl.mesh_plot(mesh_vectors)
-        image = vpl.screenshot_fig()
-        if kwargs.get('save',False):
-            try:
-                plt.imsave(kwargs['destination'],image)
-            except KeyError:
-                raise RuntimeError('Destination has not been mentioned')
-        vpl.show(block=False) 
-        vpl.close()
-    
-    def save_4_view(self: "MyMesh"):
-        '''
-        Save 4-view .jpeg images of mesh.
+        Save 3-view .png images of mesh.
         Returns a function call which in turn returns a NoneType
         '''
-        return self.make_4_view(save=True)
+        return self.make_3_view(color_scheme,save=True)
     
-    def make_4_view(self: "MyMesh",save=False) -> None:
+    def make_3_view(self: "MyMesh",color_scheme=cm.GnBu,save=False) -> None:
         '''
-        Make 4-view images of mesh object.
-        Optionally save them. equivalent to save_4_view() 
+        Make 3-view images of mesh object.
+        Optionally save them. equivalent to save_3_view() 
         '''
         _mesh = self.get_mesh()
         
         # make first view
-        destination = self.location.replace('.stl','_view1.jpeg')
-        MyMesh._make_current_view(_mesh.vectors, 
-                                  destination=destination, 
-                                  save=save
-                                  )
-        # rotate for second view
-        _mesh.rotate([0,1,0],math.radians(120))
-        # make second view
-        destination = self.location.replace('.stl','_view2.jpeg')
-        MyMesh._make_current_view(_mesh.vectors, 
-                                  destination=destination, 
-                                  save=save
-                                  )
-        # rotate for third view
-        _mesh.rotate([0,1,0],math.radians(-120))
-        _mesh.rotate([0,0,1],math.radians(120))
-        _mesh.rotate([0,1,0],math.radians(120))
-        # make thrid view
-        destination = self.location.replace('.stl','_view3.jpeg')
-        MyMesh._make_current_view(_mesh.vectors, 
-                                  destination=destination, 
-                                  save=save
-                                  )
-        # rotate for fourth view 
-        _mesh.rotate([0,1,0],math.radians(-120))# reverse third view
-        _mesh.rotate([0,0,1],math.radians(120))
-        _mesh.rotate([0,1,0],math.radians(120))
-        destination = self.location.replace('.stl','_view4.jpeg')
-        MyMesh._make_current_view(_mesh.vectors, destination=destination, save=save)
+        figure1 = plt.figure(figsize=(10,10))
+        axes1 = mplot3d.Axes3D(figure1)    # define axis object
+        axes1.plot_surface(_mesh.x,_mesh.y,_mesh.z) # plot on the axis
+        plt.axis('off') # remove axes
+        destination = self.location.replace('.stl','_view1.png')
+        if save:    
+            plt.savefig(destination) # save figure
         
-        # rotate mesh back
-        _mesh.rotate([0,1,0],math.radians(-120))       
-        _mesh.rotate([0,0,1],math.radians(120))      
+        # rotate for second view
+        _mesh.rotate([1,1,0],math.radians(-80))
+        
+        # make second view
+        figure2 = plt.figure(figsize=(10,10))
+        axes2  = mplot3d.Axes3D(figure2)
+        axes2.plot_surface(_mesh.x,_mesh.y,_mesh.z)
+        plt.axis('off')
+        destination = self.location.replace('.stl','_view2.png')
+        if save:
+            plt.savefig(destination)
+        
+        # rotate for third view
+        _mesh.rotate([1,1,0],math.radians(80))
+        _mesh.rotate([0.1,0,1],math.radians(90))
+        
+        # make thrid view
+        figure3 = plt.figure(figsize=(10,10))
+        axes3 = mplot3d.Axes3D(figure3)
+        axes3.plot_surface(_mesh.x,_mesh.y,_mesh.z)
+        plt.axis('off')
+        destination = self.location.replace('.stl','_view3.png')
+        if save:
+            plt.savefig(destination)
+        
+        #rotate mesh back
+        _mesh.rotate([0.1,0,1],math.radians(-90))
+        
+        
     
     
-def save_images_from_directory_path(path: str)-> None:
+def save_png_from_directory_path(path: str, color_scheme=cm.GnBu)-> None:
     '''
-    Factory function to save 4-view .jpeg images of all .stl files 
+    Factory function to save 3-view .png images of all .stl files 
     in the directory
     '''
     directory = MyDirectory(path)
     stl_files = directory.list_stl_files()
     for file in stl_files:
         mesh_object = MyMesh(file)
-        mesh_object.save_4_view()
+        mesh_object.make_3_view(save=True,color_scheme=color_scheme)
